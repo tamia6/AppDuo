@@ -25,6 +25,9 @@ public enum Plist {
     }
 }
 public enum Inspector {
+    public static func sameApplication(_ actual: URL?, as expected: URL) -> Bool {
+        actual?.resolvingSymlinksInPath().standardizedFileURL.path == expected.resolvingSymlinksInPath().standardizedFileURL.path
+    }
     public static func inspect(_ url: URL) throws -> AppInfo {
         let metadata = try Plist.read(url.appendingPathComponent("Contents/Info.plist"))
         guard url.pathExtension == "app", let id = metadata["CFBundleIdentifier"] as? String,

@@ -46,12 +46,22 @@ import CloneCore
         catch { self.error = error.localizedDescription }
     }
     func isRunning(_ config: CloneConfiguration) -> Bool {
-        NSWorkspace.shared.runningApplications.contains { $0.bundleURL?.standardizedFileURL == config.destination.standardizedFileURL || $0.bundleIdentifier == config.bundleID }
+        NSWorkspace.shared.runningApplications.contains { Inspector.sameApplication($0.bundleURL, as: config.destination) }
     }
     func launch(_ record: CloneRecord) {
+        let destination = record.configuration.destination
+        if let running = NSWorkspace.shared.runningApplications.first(where: { Inspector.sameApplication($0.bundleURL, as: destination) }) {
+            running.unhide()
+            NSApp.yieldActivation(to: running)
+            running.activate(from: .current, options: [.activateAllWindows])
+            return
+        }
         let config = NSWorkspace.OpenConfiguration(); config.createsNewApplicationInstance = true
-        NSWorkspace.shared.openApplication(at: record.configuration.destination, configuration: config) { _, error in
-            if let error { Task { @MainActor in self.error = error.localizedDescription } }
+        NSWorkspace.shared.openApplication(at: destination, configuration: config) { app, error in
+            Task { @MainActor in
+                if let error { self.error = error.localizedDescription }
+                else if !Inspector.sameApplication(app?.bundleURL, as: destination) { self.error = "系统未打开指定的分身，请检查分身应用是否完整。" }
+            }
         }
     }
 }

@@ -1,6 +1,19 @@
 import XCTest
 @testable import CloneCore
 final class CoreTests: XCTestCase {
+    func testLaunchMatchesClonePathIncludingAliasesButNotOriginal() throws {
+        let fm = FileManager.default
+        let base = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let clone = base.appendingPathComponent("WeWork.app")
+        let alias = base.appendingPathComponent("Alias.app")
+        try fm.createDirectory(at: clone, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: base) }
+        try fm.createSymbolicLink(at: alias, withDestinationURL: clone)
+        XCTAssertTrue(Inspector.sameApplication(alias, as: clone))
+        XCTAssertTrue(Inspector.sameApplication(URL(fileURLWithPath: clone.path, isDirectory: true), as: URL(fileURLWithPath: clone.path, isDirectory: false)))
+        XCTAssertFalse(Inspector.sameApplication(base.appendingPathComponent("WeChat.app"), as: clone))
+        XCTAssertFalse(Inspector.sameApplication(nil, as: clone))
+    }
     func testLegacyStorageRemainsAccessibleThroughAppDuo() throws {
         let fm = FileManager.default
         let base = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
