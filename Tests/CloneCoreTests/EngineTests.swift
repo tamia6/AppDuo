@@ -66,6 +66,19 @@ final class EngineTests: XCTestCase {
             }
         }
     }
+    func testNativeLanguageKeepsRegisteredMainExecutable() throws {
+        let (root, base) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        var config = base; config.language = "en"; config.injection = .auto
+        config.recipe.appType = "cocoa"
+        _ = try CloneEngine().build(config)
+        let metadata = try Plist.read(config.destination.appendingPathComponent("Contents/Info.plist"))
+        XCTAssertEqual(metadata["CFBundleExecutable"] as? String, config.name)
+        let signing = try Command.run("/usr/bin/codesign", ["-dv", config.destination.appendingPathComponent("Contents/MacOS/" + config.name).path])
+        XCTAssertTrue(signing.contains("Identifier=" + config.bundleID), signing)
+        let preferences = try Plist.read(config.dataDirectory.appendingPathComponent("Home/Library/Preferences/" + config.bundleID + ".plist"))
+        XCTAssertEqual(preferences["AppleLanguages"] as? [String], ["en"])
+    }
+
     func testHelperCollisionFailsBeforeRenaming() throws {
         let (root, c) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
         let main = c.source.appendingPathComponent("Contents/MacOS/Original")

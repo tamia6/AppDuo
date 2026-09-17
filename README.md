@@ -72,3 +72,7 @@ swift run ATBCloneCLI doctor
 - `Sources/ATBCloneCLI/`：原生命令行入口。
 - `Tests/CloneCoreTests/`：真实二进制集成回归测试。
 - `script/build_and_run.sh`：唯一构建、启动、调试、打包入口。
+
+### 通知与原生应用语言
+
+原生 Cocoa 应用使用自动注入时，语言通过偏好设置与环境变量设置；不会因为选择英文等语言切换为启动器。直接启动已登记的主程序，避免通知服务因进程身份不匹配拒绝请求。此前创建的分身需要退出后执行一次更新，保留数据、图标、名称和 Bundle ID。显式选择 launcher 或依赖启动参数的应用仍可能存在系统通知/菜单栏兼容性限制。

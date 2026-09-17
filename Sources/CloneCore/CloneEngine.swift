@@ -64,7 +64,9 @@ public struct CloneEngine {
             let raw = try Data(contentsOf: main, options: .mappedIfSafe)
             let injected = try? MachO.inject(raw, library: library)
             let needsHook = config.recipe.lark || config.recipe.chatgpt
-            let useDylib = config.injection == .dylib || (config.injection == .auto && args.isEmpty && !needsHook && injected != nil)
+            // Cocoa language is set in preferences; it must not force exec-based launching,
+            // which breaks the process identity used by notification services.
+            let useDylib = config.injection == .dylib || (config.injection == .auto && config.recipe.arguments.isEmpty && !["chromium", "electron"].contains(config.recipe.appType) && !needsHook && injected != nil)
             if useDylib {
                 guard !needsHook, let injected else { throw CloneFailure.invalid("此应用无法安全使用 dylib 注入，请选择自动或启动器") }
                 try RuntimeBuilder.dylib(output: frameworks.appendingPathComponent("libatbclone_env.dylib"), env: env)
