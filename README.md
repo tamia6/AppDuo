@@ -1,8 +1,8 @@
 # AppDuo
 
-原生 macOS 应用分身工具。界面使用 SwiftUI，克隆引擎、Mach-O 修改、签名编排、配置与命令行使用 Swift。运行不需要 Python、Toga 或原 ATBClone 仓库。
+原生 macOS 应用分身工具。界面使用 SwiftUI，克隆引擎、Mach-O 修改、签名编排、配置与命令行使用 Swift。可独立运行，无需 Python 环境。
 
-基于 [aitobox/ATBClone](https://github.com/aitobox/ATBClone) 及本地 `fe299b6` 版本重写，遵循 GPL-3.0；内置 YAML 规则与少量 Cocoa/POSIX 隔离钩子保留上游实现和许可。
+使用 GPL-3.0 许可证，详见 [LICENSE](LICENSE)。
 
 ## 下载与自动构建
 

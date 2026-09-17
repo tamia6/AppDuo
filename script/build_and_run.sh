@@ -6,7 +6,7 @@ name=AppDuo
 app="$PWD/dist/$name.app"
 /usr/bin/pkill -x "$name" >/dev/null 2>&1 || true
 configuration="${CONFIGURATION:-debug}"
-version="${APP_VERSION:-0.1.0}"
+version="${APP_VERSION:-0.1.1}"
 if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "APP_VERSION must be major.minor.patch" >&2
     exit 2
