@@ -1,0 +1,10 @@
+bundle_id: com.kingsoft.wpsoffice.mac
+app_name: WPS Office
+strategy: hard_clone
+app_type: cocoa
+strip_sandbox: true
+environment_injection:
+  HOME: '{{ATB_DATA_DIR}}/Home'
+  TMPDIR: '{{ATB_DATA_DIR}}/Tmp'
+symlink_whitelist:
+- Library/Keychains

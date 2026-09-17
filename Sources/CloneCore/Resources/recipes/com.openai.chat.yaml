@@ -1,0 +1,17 @@
+bundle_id: com.openai.chat
+app_name: ChatGPT
+strategy: hard_clone
+app_type: electron
+strip_sandbox: true
+patch_framework_singleton: false
+patch_chatgpt_isolation: true
+strip_url_schemes: true
+launch_args: []
+environment_injection:
+  HOME: '{{ATB_DATA_DIR}}/Home'
+  TMPDIR: '{{ATB_DATA_DIR}}/Tmp'
+  CODEX_HOME: '{{ATB_DATA_DIR}}/Codex'
+symlink_whitelist:
+- Library/Keychains
+
+

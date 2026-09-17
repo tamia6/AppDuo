@@ -1,0 +1,58 @@
+import SwiftUI
+import AppKit
+import CloneCore
+
+@MainActor @Observable final class AppStore {
+    var records: [CloneRecord] = []
+    var recipes: [Recipe] = []
+    var busy = false
+    var progress = ""
+    var logs: [String] = []
+    var error: String?
+    var showingWizard = false
+    var editing: CloneRecord?
+    var selection = "clones"
+    let repository = CloneRepository()
+    var root: URL { repository.root }
+    init() { Task { await reload() } }
+    func reload() async {
+        do {
+            records = try await repository.load()
+            recipes = try Recipes.load(customDirectory: root.appendingPathComponent("recipes"))
+        } catch { self.error = error.localizedDescription }
+    }
+    func addLog(_ line: String) {
+        progress = line; logs.append("\(Date().formatted(date: .omitted, time: .standard))  \(line)")
+        if logs.count > 1000 { logs.removeFirst(logs.count - 1000) }
+    }
+    func build(_ config: CloneConfiguration, password: String, updating: Bool) async -> Bool {
+        guard !busy else { return false }
+        if updating && isRunning(config) { error = "请先退出该分身，再修改或更新。"; return false }
+        busy = true; defer { busy = false }
+        do {
+            records = try await repository.build(config, password: password, updating: updating) { [weak self] line in
+                Task { @MainActor in self?.addLog(line) }
+            }
+            return true
+        } catch { self.error = error.localizedDescription; addLog("失败：\(error.localizedDescription)"); return false }
+    }
+    func update(_ record: CloneRecord) async {
+        do { _ = await build(record.configuration, password: try Secrets.read(record.id), updating: true) }
+        catch { self.error = error.localizedDescription }
+    }
+    func remove(_ record: CloneRecord, withData: Bool) async {
+        if isRunning(record.configuration) { error = "请先退出该分身。"; return }
+        busy = true; defer { busy = false }
+        do { records = try await repository.remove(record.id, withData: withData) }
+        catch { self.error = error.localizedDescription }
+    }
+    func isRunning(_ config: CloneConfiguration) -> Bool {
+        NSWorkspace.shared.runningApplications.contains { $0.bundleURL?.standardizedFileURL == config.destination.standardizedFileURL || $0.bundleIdentifier == config.bundleID }
+    }
+    func launch(_ record: CloneRecord) {
+        let config = NSWorkspace.OpenConfiguration(); config.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: record.configuration.destination, configuration: config) { _, error in
+            if let error { Task { @MainActor in self.error = error.localizedDescription } }
+        }
+    }
+}

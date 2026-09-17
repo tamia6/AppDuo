@@ -1,0 +1,15 @@
+bundle_id: com.electron.lark
+app_name: 飞书
+strategy: hard_clone
+app_type: electron
+strip_sandbox: true
+patch_framework_singleton: false
+patch_lark_isolation: true
+strip_url_schemes: true
+launch_args: []
+environment_injection:
+  HOME: '{{ATB_DATA_DIR}}/Home'
+  TMPDIR: '{{ATB_DATA_DIR}}/Tmp'
+symlink_whitelist:
+- Library/Keychains
+

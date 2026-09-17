@@ -1,0 +1,10 @@
+bundle_id: com.bilibili.bilibiliPC
+app_name: 哔哩哔哩
+strategy: hard_clone
+app_type: electron
+strip_sandbox: true
+environment_injection:
+  HOME: '{{ATB_DATA_DIR}}/Home'
+  TMPDIR: '{{ATB_DATA_DIR}}/Tmp'
+symlink_whitelist:
+- Library/Keychains
