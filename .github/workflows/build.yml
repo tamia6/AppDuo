@@ -1,0 +1,64 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Test
+        run: swift test
+      - name: Build DMG
+        env:
+          CONFIGURATION: release
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            export APP_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          bash script/build_and_run.sh --dmg
+          codesign --verify --deep --strict dist/AppDuo.app
+          hdiutil verify "dist/AppDuo-$(uname -m).dmg"
+          cd dist
+          shasum -a 256 "AppDuo-$(uname -m).dmg" > "AppDuo-$(uname -m).dmg.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: AppDuo-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.sha256
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --title "AppDuo $GITHUB_REF_NAME" --notes "Apple Silicon: arm64; Intel: x86_64. Requires macOS 14+ and Xcode Command Line Tools for cloning. Ad-hoc signed; not Apple notarized."

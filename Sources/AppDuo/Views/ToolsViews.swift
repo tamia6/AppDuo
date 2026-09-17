@@ -105,7 +105,7 @@ struct DoctorView: View {
         running = true
         Task {
             let checks = await Task.detached { () -> [(String, String, Bool)] in
-                [("macOS", "/usr/bin/sw_vers", ["-productVersion"]), ("编译器", "/usr/bin/xcrun", ["--find", "clang"]), ("签名工具", "/usr/bin/codesign", ["--version"])].map { title, executable, args in
+                [("macOS", "/usr/bin/sw_vers", ["-productVersion"]), ("编译器", "/usr/bin/xcrun", ["--find", "clang"]), ("签名工具", "/usr/bin/xcrun", ["--find", "codesign"])].map { title, executable, args in
                     do { return (title, try Command.run(executable, args).trimmingCharacters(in: .whitespacesAndNewlines), true) }
                     catch { return (title, error.localizedDescription, false) }
                 }

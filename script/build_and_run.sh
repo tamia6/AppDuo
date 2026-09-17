@@ -5,8 +5,15 @@ mode="${1:-run}"
 name=AppDuo
 app="$PWD/dist/$name.app"
 /usr/bin/pkill -x "$name" >/dev/null 2>&1 || true
-swift build
-bin="$(swift build --show-bin-path)"
+configuration="${CONFIGURATION:-debug}"
+version="${APP_VERSION:-0.1.0}"
+if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "APP_VERSION must be major.minor.patch" >&2
+    exit 2
+fi
+arch="$(uname -m)"
+swift build -c "$configuration"
+bin="$(swift build -c "$configuration" --show-bin-path)"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin/$name" "$app/Contents/MacOS/$name"
 # SwiftPM resource bundles must live next to the app's Resources lookup root.
@@ -24,8 +31,8 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <key>CFBundleName</key><string>AppDuo</string>
 <key>CFBundleDisplayName</key><string>AppDuo</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
-<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>$version</string>
+<key>CFBundleVersion</key><string>$version</string>
 <key>CFBundleIconFile</key><string>AppIcon.icns</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
@@ -40,7 +47,7 @@ case "$mode" in
    trap 'rm -rf "$stage"' EXIT
    /usr/bin/ditto "$app" "$stage/$name.app"
    ln -s /Applications "$stage/Applications"
-   /usr/bin/hdiutil create -volname 'AppDuo' -srcfolder "$stage" -ov -format UDZO "$PWD/dist/AppDuo-arm64.dmg"
+   /usr/bin/hdiutil create -volname 'AppDuo' -srcfolder "$stage" -ov -format UDZO "$PWD/dist/AppDuo-$arch.dmg"
    ;;
  run) /usr/bin/open -n "$app" ;;
  --verify) /usr/bin/open -n "$app"; sleep 2; /usr/bin/pgrep -x "$name" >/dev/null ;;

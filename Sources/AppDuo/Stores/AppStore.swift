@@ -11,7 +11,6 @@ import CloneCore
     var error: String?
     var showingWizard = false
     var editing: CloneRecord?
-    var selection = "clones"
     let repository = CloneRepository()
     var root: URL { repository.root }
     init() { Task { await reload() } }

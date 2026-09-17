@@ -3,13 +3,28 @@ import Darwin
 
 public actor CloneRepository {
     public nonisolated let root: URL
-    public init(root: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("ATBCloneSwift")) { self.root = root }
+    public static let defaultRoot = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("AppDuo")
+    public init(root: URL = CloneRepository.defaultRoot) { self.root = root }
+    // Existing clones embed their data paths. Keep those paths valid without moving live data.
+    static func prepareRoot(_ root: URL, legacy: URL) throws {
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: root.path), fm.fileExists(atPath: legacy.path) {
+            try fm.createSymbolicLink(at: root, withDestinationURL: legacy)
+        }
+    }
+    private func prepareDefaultRoot() throws {
+        if root == Self.defaultRoot {
+            try Self.prepareRoot(root, legacy: root.deletingLastPathComponent().appendingPathComponent("ATBCloneSwift"))
+        }
+    }
     public func load() throws -> [CloneRecord] {
+        try prepareDefaultRoot()
         let file = root.appendingPathComponent("clones.json")
         guard FileManager.default.fileExists(atPath: file.path) else { return [] }
         return try JSONDecoder().decode([CloneRecord].self, from: Data(contentsOf: file))
     }
     private func locked<T>(_ operation: () throws -> T) throws -> T {
+        try prepareDefaultRoot()
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let fd = open(root.appendingPathComponent(".lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
         guard fd >= 0 else { throw CloneFailure.invalid("无法锁定分身记录") }

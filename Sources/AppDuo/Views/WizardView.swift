@@ -23,6 +23,15 @@ struct WizardView: View {
     @State private var issue: String?
     @State private var submitting = false
     private let stages = ["选择应用", "克隆方式", "名称与图标", "网络与存储", "确认创建"]
+    private var windowHeight: CGFloat {
+        switch step {
+        case 0: return info == nil ? 320 : 420
+        case 1: return 430
+        case 2: return 510
+        case 3: return proxy.enabled ? 620 : 440
+        default: return 480
+        }
+    }
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -50,7 +59,7 @@ struct WizardView: View {
                 Button(step == 4 ? (record == nil ? "创建分身" : "保存并更新") : "下一步") { advance() }
                     .buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(submitting || (step == 0 && info == nil))
             }.padding(20)
-        }.frame(width: 660, height: 690).interactiveDismissDisabled(submitting).onAppear { restore() }
+        }.frame(width: 600, height: windowHeight).interactiveDismissDisabled(submitting).onAppear { restore() }
     }
     private var sourceForm: some View {
         Section {
@@ -59,7 +68,7 @@ struct WizardView: View {
                 VStack(alignment: .leading, spacing: 8) { Text(info?.name ?? "选择要分身的应用").font(.title3.bold()); Text(source?.path ?? "支持 macOS .app 应用").font(.caption).foregroundStyle(.secondary).lineLimit(2) }
                 Spacer()
                 Button("选择…") { selectSource() }
-            }.padding(.vertical, 25)
+            }.padding(.vertical, 12)
             if let info { LabeledContent("Bundle ID", value: info.bundleID); LabeledContent("版本", value: info.version); LabeledContent("检测类型", value: info.type) }
         }
     }

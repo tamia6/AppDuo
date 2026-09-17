@@ -7,37 +7,8 @@ struct ContentView: View {
     @State private var query = ""
     @State private var removing: CloneRecord?
     var body: some View {
-        NavigationSplitView {
-            List(selection: $store.selection) {
-                Section("工作空间") {
-                    Label("我的分身", systemImage: "square.stack.3d.up").tag("clones")
-                    Label("规则库", systemImage: "slider.horizontal.3").tag("recipes")
-                }
-                Section("工具") {
-                    Label("应用探测", systemImage: "viewfinder").tag("probe")
-                    Label("环境检查", systemImage: "stethoscope").tag("doctor")
-                    Label("操作日志", systemImage: "text.alignleft").tag("logs")
-                }
-            }
-            .navigationTitle("AppDuo")
-            .navigationSplitViewColumnWidth(min: 190, ideal: 210)
-            .safeAreaInset(edge: .bottom) {
-                HStack {
-                    Image(nsImage: NSImage(contentsOf: Assets.icon) ?? NSImage()).resizable().frame(width: 30, height: 30)
-                    VStack(alignment: .leading) { Text("AppDuo").font(.caption.bold()); Text("原生 macOS 分身管理").font(.caption2).foregroundStyle(.secondary) }
-                    Spacer()
-                }.padding()
-            }
-        } detail: {
-            Group {
-                switch store.selection {
-                case "recipes": RecipesView(store: store)
-                case "probe": ProbeView(store: store)
-                case "doctor": DoctorView()
-                case "logs": LogsView(store: store)
-                default: clones
-                }
-            }
+        NavigationStack {
+            clones
             .toolbar {
                 ToolbarItem { Button { Task { await store.reload() } } label: { Label("刷新", systemImage: "arrow.clockwise") }.disabled(store.busy) }
                 ToolbarItem { Button { store.editing = nil; store.showingWizard = true } label: { Label("新建分身", systemImage: "plus") }.disabled(store.busy) }
@@ -74,14 +45,14 @@ struct ContentView: View {
                         Button("新建分身") { store.editing = nil; store.showingWizard = true }.buttonStyle(.borderedProminent).disabled(store.busy)
                     }.frame(maxWidth: .infinity, minHeight: 340)
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 18)], spacing: 18) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220, maximum: 250), spacing: 18, alignment: .leading)], alignment: .leading, spacing: 18) {
                         ForEach(store.records.filter { query.isEmpty || $0.configuration.name.localizedCaseInsensitiveContains(query) }) { record in
                             CloneCard(record: record, busy: store.busy, launch: { store.launch(record) }, edit: { store.editing = record; store.showingWizard = true }, update: { Task { await store.update(record) } }, remove: { removing = record })
                         }
                     }
                 }
             }.padding(30)
-        }.navigationTitle("我的分身").searchable(text: $query, prompt: "搜索分身")
+        }.navigationTitle("应用分身").searchable(text: $query, prompt: "搜索分身")
     }
 }
 struct CloneCard: View {
@@ -95,7 +66,7 @@ struct CloneCard: View {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: c.destination.path)).resizable().frame(width: 54, height: 54)
                 VStack(alignment: .leading, spacing: 5) { Text(c.displayName).font(.title3.bold()); Text(c.recipe.appName).font(.caption).foregroundStyle(.secondary) }
                 Spacer()
-                Menu { Button("编辑设置…", action: edit); Button("更新分身", action: update); Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([c.destination]) }; Divider(); Button("移除…", role: .destructive, action: remove) } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).frame(width: 22).disabled(busy)
+                Menu { Button("编辑设置…", action: edit); Button("更新分身", action: update); Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([c.destination]) }; Divider(); Button("移除…", role: .destructive, action: remove) } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 28, height: 28).accessibilityLabel("更多操作").help("更多操作").disabled(busy)
             }
             HStack(spacing: 12) {
                 Label(c.recipe.strategy == .hard ? "硬分身" : "软分身", systemImage: "square.stack").font(.caption)
@@ -107,6 +78,6 @@ struct CloneCard: View {
                 Spacer()
                 Button("打开", action: launch).buttonStyle(.borderedProminent).disabled(busy)
             }
-        }.padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).stroke(.quaternary))
+        }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).stroke(.quaternary))
     }
 }

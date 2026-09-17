@@ -17,7 +17,7 @@ import CloneCore
                 else { guard i + 1 < args.count else { throw CloneFailure.invalid("参数缺少值：\(key)") }; options[key] = args[i + 1]; i += 2 }
             } else { positional.append(args[i]); i += 1 }
         }
-        let repository = CloneRepository(root: options["--root"].map { URL(fileURLWithPath: $0) } ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("ATBCloneSwift"))
+        let repository = CloneRepository(root: options["--root"].map { URL(fileURLWithPath: $0) } ?? CloneRepository.defaultRoot)
         let recipes = try Recipes.load(customDirectory: repository.root.appendingPathComponent("recipes"))
         switch command {
         case "list":
@@ -30,7 +30,7 @@ import CloneCore
         case "doctor":
             print(try Command.run("/usr/bin/sw_vers", ["-productVersion"]))
             print(try Command.run("/usr/bin/xcrun", ["--find", "clang"]))
-            print(try Command.run("/usr/bin/codesign", ["--version"]))
+            print(try Command.run("/usr/bin/xcrun", ["--find", "codesign"]))
         case "clone":
             guard let path = positional.first else { throw CloneFailure.invalid("clone 需要 .app 路径") }
             let info = try Inspector.inspect(URL(fileURLWithPath: path))
