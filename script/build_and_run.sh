@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mode="${1:-run}"
-name=ATBCloneSwift
+name=AppDuo
 app="$PWD/dist/$name.app"
 /usr/bin/pkill -x "$name" >/dev/null 2>&1 || true
 swift build
@@ -21,7 +21,8 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>$name</string>
 <key>CFBundleIdentifier</key><string>com.atbclone.swift</string>
-<key>CFBundleName</key><string>ATBClone Swift</string>
+<key>CFBundleName</key><string>AppDuo</string>
+<key>CFBundleDisplayName</key><string>AppDuo</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>0.1.0</string>
 <key>CFBundleVersion</key><string>1</string>
@@ -39,11 +40,11 @@ case "$mode" in
    trap 'rm -rf "$stage"' EXIT
    /usr/bin/ditto "$app" "$stage/$name.app"
    ln -s /Applications "$stage/Applications"
-   /usr/bin/hdiutil create -volname 'ATBClone Swift' -srcfolder "$stage" -ov -format UDZO "$PWD/dist/ATBCloneSwift-arm64.dmg"
+   /usr/bin/hdiutil create -volname 'AppDuo' -srcfolder "$stage" -ov -format UDZO "$PWD/dist/AppDuo-arm64.dmg"
    ;;
  run) /usr/bin/open -n "$app" ;;
  --verify) /usr/bin/open -n "$app"; sleep 2; /usr/bin/pgrep -x "$name" >/dev/null ;;
  --debug) lldb -- "$app/Contents/MacOS/$name" ;;
- --logs|--telemetry) /usr/bin/open -n "$app"; /usr/bin/log stream --level info --predicate 'process == "ATBCloneSwift"' ;;
+ --logs|--telemetry) /usr/bin/open -n "$app"; /usr/bin/log stream --level info --predicate 'process == "AppDuo"' ;;
  *) echo "usage: $0 [run|--build|--dmg|--verify|--debug|--logs|--telemetry]" >&2; exit 2 ;;
 esac

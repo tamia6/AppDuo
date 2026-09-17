@@ -1,4 +1,4 @@
-# ATBClone Swift
+# AppDuo
 
 原生 macOS 应用分身工具。界面使用 SwiftUI，克隆引擎、Mach-O 修改、签名编排、配置与命令行使用 Swift。运行不需要 Python、Toga 或原 ATBClone 仓库。
 
@@ -33,23 +33,23 @@ Swift 标准库无法提供 YAML 解析，因此只引入 [Yams](https://github.
 
 ## 数据与规则
 
-默认使用 `~/ATBCloneSwift/`：`Apps/`、`Data/`、`recipes/`、`clones.json`。与旧版 `~/ATBClone/` 独立，**不会自动迁移或修改旧版分身**。可以复制旧版自定义 YAML 到新版本 `recipes/`；原有应用建议在原版中继续管理，或在新版重新创建分身。
+为兼容已经创建的分身，数据继续使用 `~/ATBCloneSwift/`：`Apps/`、`Data/`、`recipes/`、`clones.json`。与旧版 `~/ATBClone/` 独立，**不会自动迁移或修改旧版分身**。可以复制旧版自定义 YAML 到新版本 `recipes/`；原有应用建议在原版中继续管理，或在新版重新创建分身。
 
 分身目录默认无需提权。当前版本不提供系统目录的自动管理员授权；请使用用户可写路径。数据删除默认关闭；仅能从应用中删除本工具默认 Data 目录下的数据，自定义路径需要用户在 Finder 中管理。
 
 ## CLI
 
 ```sh
-swift run ATBCloneCLI clone /Applications/WeChat.app --name WeWork --icon /path/icon.icns
-swift run ATBCloneCLI list
-swift run ATBCloneCLI update WeWork
-swift run ATBCloneCLI remove WeWork              # 确认后移到废纸篓，保留数据
-swift run ATBCloneCLI probe /Applications/WeChat.app
-swift run ATBCloneCLI recipes
-swift run ATBCloneCLI doctor
+swift run AppDuoCLI clone /Applications/WeChat.app --name WeWork --icon /path/icon.icns
+swift run AppDuoCLI list
+swift run AppDuoCLI update WeWork
+swift run AppDuoCLI remove WeWork              # 确认后移到废纸篓，保留数据
+swift run AppDuoCLI probe /Applications/WeChat.app
+swift run AppDuoCLI recipes
+swift run AppDuoCLI doctor
 ```
 
-运行 `swift run ATBCloneCLI help` 查看代理、语言、目录和注入参数。`--root DIR` 可隔离测试数据。密码通过 `ATBCLONE_PROXY_PASSWORD` 环境变量传入，记录中不存明文密码。
+运行 `swift run AppDuoCLI help` 查看代理、语言、目录和注入参数。`--root DIR` 可隔离测试数据。密码通过 `ATBCLONE_PROXY_PASSWORD` 环境变量传入，记录中不存明文密码。
 
 硬分身规则示例（大小写需与名称一致）：
 
@@ -68,8 +68,8 @@ swift run ATBCloneCLI doctor
 ## 结构
 
 - `Sources/CloneCore/`：Swift 核心、YAML 规则、运行时模板与资源。
-- `Sources/ATBCloneSwift/`：SwiftUI 界面、AppKit 文件选择和应用启动桥接。
-- `Sources/ATBCloneCLI/`：原生命令行入口。
+- `Sources/AppDuo/`：SwiftUI 界面、AppKit 文件选择和应用启动桥接。
+- `Sources/AppDuoCLI/`：原生命令行入口。
 - `Tests/CloneCoreTests/`：真实二进制集成回归测试。
 - `script/build_and_run.sh`：唯一构建、启动、调试、打包入口。
 

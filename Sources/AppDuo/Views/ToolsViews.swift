@@ -124,7 +124,7 @@ struct SettingsView: View {
     let root: URL
     var body: some View {
         Form {
-            Section("ATBClone Swift") { Text("原生 Swift + SwiftUI · macOS 14+"); Text("Swift 版本的数据与原版独立保存。").foregroundStyle(.secondary) }
+            Section("AppDuo") { Text("原生 Swift + SwiftUI · macOS 14+"); Text("Swift 版本的数据与原版独立保存。").foregroundStyle(.secondary) }
             Section("数据位置") { Text(root.path).textSelection(.enabled); Button("在 Finder 中打开") { try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true); NSWorkspace.shared.open(root) } }
         }.formStyle(.grouped).frame(width: 500, height: 300)
     }

@@ -55,7 +55,7 @@ import CloneCore
             }
         default:
             print("""
-            ATBClone Swift CLI
+            AppDuo CLI
             clone APP [--name NAME] [--display-name TEXT] [--icon FILE.icns]
                       [--strategy hard_clone|soft_clone] [--injection-strategy auto|dylib|launcher]
                       [--language zh-Hans|en|...] [--output-dir DIR] [--data-dir DIR]

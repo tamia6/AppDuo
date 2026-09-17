@@ -19,12 +19,12 @@ struct ContentView: View {
                     Label("操作日志", systemImage: "text.alignleft").tag("logs")
                 }
             }
-            .navigationTitle("ATBClone")
+            .navigationTitle("AppDuo")
             .navigationSplitViewColumnWidth(min: 190, ideal: 210)
             .safeAreaInset(edge: .bottom) {
                 HStack {
                     Image(nsImage: NSImage(contentsOf: Assets.icon) ?? NSImage()).resizable().frame(width: 30, height: 30)
-                    VStack(alignment: .leading) { Text("ATBClone Swift").font(.caption.bold()); Text("原生 macOS 分身管理").font(.caption2).foregroundStyle(.secondary) }
+                    VStack(alignment: .leading) { Text("AppDuo").font(.caption.bold()); Text("原生 macOS 分身管理").font(.caption2).foregroundStyle(.secondary) }
                     Spacer()
                 }.padding()
             }
