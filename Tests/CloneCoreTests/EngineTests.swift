@@ -2,6 +2,34 @@ import XCTest
 @testable import CloneCore
 
 final class EngineTests: XCTestCase {
+    func testSourceUpdateDetectionAndUpgrade() throws {
+        let (root, config) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let sourcePlist = config.source.appendingPathComponent("Contents/Info.plist")
+        var metadata = try Plist.read(sourcePlist)
+        metadata["CFBundleShortVersionString"] = "1.9"
+        metadata["CFBundleVersion"] = "9"
+        try Plist.write(metadata, to: sourcePlist)
+        _ = try CloneEngine().build(config)
+        XCTAssertNil(try CloneUpdates.availableVersion(for: config))
+        for (version, build, expected) in [("1.10", "1", "1.10" as String?), ("1.8", "99", nil), ("1.9", "10", "1.9 (10)"), ("1.9", "8", nil)] {
+            metadata["CFBundleShortVersionString"] = version
+            metadata["CFBundleVersion"] = build
+            try Plist.write(metadata, to: sourcePlist)
+            XCTAssertEqual(try CloneUpdates.availableVersion(for: config), expected)
+        }
+        metadata["CFBundleShortVersionString"] = "1.10"
+        try Plist.write(metadata, to: sourcePlist)
+        var soft = config; soft.recipe.strategy = .soft
+        XCTAssertNil(try CloneUpdates.availableVersion(for: soft))
+        let marker = config.dataDirectory.appendingPathComponent("keep.txt")
+        try Data("login data".utf8).write(to: marker)
+        _ = try CloneEngine().build(config, updating: true)
+        XCTAssertNil(try CloneUpdates.availableVersion(for: config))
+        XCTAssertEqual(try Data(contentsOf: marker), Data("login data".utf8))
+        try FileManager.default.removeItem(at: sourcePlist)
+        XCTAssertThrowsError(try CloneUpdates.availableVersion(for: config))
+    }
     func fixture() throws -> (URL, CloneConfiguration) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("atb-native-test-" + UUID().uuidString)
         let source = root.appendingPathComponent("Original.app")

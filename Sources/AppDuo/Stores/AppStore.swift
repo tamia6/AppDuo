@@ -4,6 +4,7 @@ import CloneCore
 
 @MainActor @Observable final class AppStore {
     var records: [CloneRecord] = []
+    var availableUpdates: [UUID: String] = [:]
     var recipes: [Recipe] = []
     var busy = false
     var progress = ""
@@ -18,7 +19,21 @@ import CloneCore
         do {
             records = try await repository.load()
             recipes = try Recipes.load(customDirectory: root.appendingPathComponent("recipes"))
+            await checkUpdates()
         } catch { self.error = error.localizedDescription }
+    }
+    private func checkUpdates() async {
+        let snapshot = records
+        availableUpdates = await Task.detached {
+            var updates: [UUID: String] = [:]
+            for record in snapshot {
+                // A removed or unreadable app must not prevent checks for other clones.
+                if let version = try? CloneUpdates.availableVersion(for: record.configuration) {
+                    updates[record.id] = version
+                }
+            }
+            return updates
+        }.value
     }
     func addLog(_ line: String) {
         progress = line; logs.append("\(Date().formatted(date: .omitted, time: .standard))  \(line)")
@@ -32,6 +47,7 @@ import CloneCore
             records = try await repository.build(config, password: password, updating: updating) { [weak self] line in
                 Task { @MainActor in self?.addLog(line) }
             }
+            await checkUpdates()
             return true
         } catch { self.error = error.localizedDescription; addLog("失败：\(error.localizedDescription)"); return false }
     }
@@ -42,7 +58,7 @@ import CloneCore
     func remove(_ record: CloneRecord, withData: Bool) async {
         if isRunning(record.configuration) { error = "请先退出该分身。"; return }
         busy = true; defer { busy = false }
-        do { records = try await repository.remove(record.id, withData: withData) }
+        do { records = try await repository.remove(record.id, withData: withData); availableUpdates.removeValue(forKey: record.id) }
         catch { self.error = error.localizedDescription }
     }
     func isRunning(_ config: CloneConfiguration) -> Bool {

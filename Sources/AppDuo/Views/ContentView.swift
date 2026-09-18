@@ -47,7 +47,7 @@ struct ContentView: View {
                 } else {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220, maximum: 250), spacing: 18, alignment: .leading)], alignment: .leading, spacing: 18) {
                         ForEach(store.records.filter { query.isEmpty || $0.configuration.name.localizedCaseInsensitiveContains(query) }) { record in
-                            CloneCard(record: record, busy: store.busy, launch: { store.launch(record) }, edit: { store.editing = record; store.showingWizard = true }, update: { Task { await store.update(record) } }, remove: { removing = record })
+                            CloneCard(record: record, busy: store.busy, updateVersion: store.availableUpdates[record.id], launch: { store.launch(record) }, edit: { store.editing = record; store.showingWizard = true }, update: { Task { await store.update(record) } }, remove: { removing = record })
                         }
                     }
                 }
@@ -58,12 +58,24 @@ struct ContentView: View {
 struct CloneCard: View {
     let record: CloneRecord
     let busy: Bool
+    let updateVersion: String?
     let launch: () -> Void, edit: () -> Void, update: () -> Void, remove: () -> Void
     var body: some View {
         let c = record.configuration
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 12) {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: c.destination.path)).resizable().frame(width: 54, height: 54)
+                    .overlay(alignment: .bottomTrailing) {
+                        if let updateVersion {
+                            Button(action: update) {
+                                Image(systemName: "arrow.up.circle.fill").font(.system(size: 22, weight: .semibold))
+                                    .symbolRenderingMode(.palette).foregroundStyle(.white, .blue)
+                                    .padding(2).background(.background, in: Circle())
+                            }.buttonStyle(.plain).disabled(busy)
+                                .help("升级至 \(updateVersion)，保留数据与设置")
+                                .accessibilityLabel("升级 \(c.displayName) 至 \(updateVersion)")
+                        }
+                    }
                 VStack(alignment: .leading, spacing: 5) { Text(c.displayName).font(.title3.bold()); Text(c.recipe.appName).font(.caption).foregroundStyle(.secondary) }
                 Spacer()
                 Menu { Button("编辑设置…", action: edit); Button("更新分身", action: update); Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([c.destination]) }; Divider(); Button("移除…", role: .destructive, action: remove) } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 28, height: 28).accessibilityLabel("更多操作").help("更多操作").disabled(busy)
@@ -76,6 +88,7 @@ struct CloneCard: View {
             HStack {
                 Text(c.name).font(.system(.caption, design: .monospaced)).lineLimit(1)
                 Spacer()
+                if updateVersion != nil { Button("升级", action: update).disabled(busy).help("使用本机原应用的最新版本更新分身") }
                 Button("打开", action: launch).buttonStyle(.borderedProminent).disabled(busy)
             }
         }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).stroke(.quaternary))
