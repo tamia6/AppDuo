@@ -93,6 +93,12 @@ This allows this app to open; it does not notarize it. You do not need to disabl
 
 Reference: [Apple: Safely open apps on your Mac](https://support.apple.com/en-us/102445).
 
+### In-app updates
+
+Updater-enabled versions check for stable AppDuo releases in the background on launch. When prompted, choose Install Update to download and verify the archive, then Install and Relaunch when ready. The AppDuo menu also includes 检查更新… (Check for Updates). Installation waits for active clone operations; clone data and settings are preserved. Version 0.1.6 needs one manual upgrade to an updater-enabled version. This does not replace macOS first-launch approval.
+
+See [automatic update setup and limitations](docs/automatic-updates.md).
+
 ## Build and run
 
 Requires macOS 14+, Xcode or Command Line Tools, and a Swift 6 toolchain. Creating clones uses Apple's `clang` and `codesign`.

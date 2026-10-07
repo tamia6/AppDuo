@@ -8,7 +8,15 @@ if [[ "$mode" != "--build" && "$mode" != "--dmg" ]]; then
     /usr/bin/pkill -x "$name" >/dev/null 2>&1 || true
 fi
 configuration="${CONFIGURATION:-debug}"
-version="${APP_VERSION:-0.1.5}"
+version="${APP_VERSION:-0.1.6}"
+public_key="${SPARKLE_PUBLIC_KEY:-}"
+if [[ "${REQUIRE_UPDATES:-0}" == "1" && -z "$public_key" ]]; then
+    echo "Release requires SPARKLE_PUBLIC_KEY" >&2
+    exit 2
+fi
+if [[ -n "$public_key" ]]; then
+    python3 -c 'import base64, os; assert len(base64.b64decode(os.environ["SPARKLE_PUBLIC_KEY"], validate=True)) == 32'
+fi
 if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "APP_VERSION must be major.minor.patch" >&2
     exit 2
@@ -20,6 +28,10 @@ bin="$(swift build -c "$configuration" --show-bin-path)"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin/$name" "$app/Contents/MacOS/$name"
+framework="$(find "$PWD/.build/artifacts" -type d -name Sparkle.framework -print -quit)"
+test -n "$framework"
+mkdir -p "$app/Contents/Frameworks"
+/usr/bin/ditto "$framework" "$app/Contents/Frameworks/Sparkle.framework"
 if [[ "$configuration" == "release" ]]; then
     /usr/bin/strip -S -x "$app/Contents/MacOS/$name"
 fi
@@ -49,6 +61,13 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSHighResolutionCapable</key><true/>
+<key>SUEnableAutomaticChecks</key><true/>
+<key>SUAutomaticallyUpdate</key><false/>
+<key>SUAllowsAutomaticUpdates</key><false/>
+<key>SUSendProfileInfo</key><false/>
+<key>SUVerifyUpdateBeforeExtraction</key><true/>
+<key>SUFeedURL</key><string>https://github.com/tamia6/AppDuo/releases/latest/download/appcast-$arch.xml</string>
+<key>SUPublicEDKey</key><string>$public_key</string>
 </dict></plist>
 PLIST
 /usr/bin/codesign --force --deep --sign - "$app"

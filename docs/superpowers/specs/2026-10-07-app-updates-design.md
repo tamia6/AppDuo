@@ -1,6 +1,6 @@
 # AppDuo automatic updates
 
-Approved by the user: Sparkle-based updates, launch-time background stable-release check, prompt before downloading/installing/relaunching, and manual Check for Updates menu. ARM64 and Intel use distinct feeds on the existing HTTPS website and signed update archives on GitHub Releases.
+Approved by the user: Sparkle-based updates, launch-time background stable-release check, prompt before downloading/installing/relaunching, and manual Check for Updates menu. ARM64 and Intel use distinct feeds published with the stable GitHub Release over HTTPS and signed update archives on GitHub Releases.
 
 Sparkle owns version comparison, authenticated archive verification, progress, privileged installation when needed, and error recovery. AppDuo defers installation while a clone build/removal is running. Clone data and configuration are outside the replaced app bundle and remain intact. Applications copied from DMG and installed by Homebrew use the same updater; the cask declares auto_updates when the feature ships. A read-only/translocated installation must not be silently replaced.
 

@@ -53,6 +53,12 @@ git push origin v0.1.1
 
 参考：[Apple：在 Mac 上安全地打开 App](https://support.apple.com/zh-cn/102445)。
 
+### 应用内更新
+
+支持自动更新的版本会在启动时后台检查 AppDuo 稳定版，并在发现新版时提示。选择安装更新后，应用负责下载和验证更新包；准备完成后选择安装并重启。也可在 AppDuo 菜单选择「检查更新…」。创建或更新分身期间会延后安装，分身数据和配置保留。v0.1.6 需要先手动安装一次支持此功能的新版本。此功能不替代 macOS 的首次打开确认。
+
+发布配置与限制见 [自动更新说明](docs/automatic-updates.md)。
+
 ## 构建与运行
 
 要求 macOS 14+、Xcode / Command Line Tools、Swift 6 工具链。克隆应用时需要系统 clang 和 codesign。

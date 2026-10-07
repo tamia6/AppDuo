@@ -2,6 +2,8 @@
 set -euo pipefail
 app="$(cd "$(dirname "${1:?usage: $0 APP}")" && pwd)/$(basename "$1")"
 codesign --verify --deep --strict "$app"
+test -f "$app/Contents/Frameworks/Sparkle.framework/Sparkle"
+/usr/bin/otool -L "$app/Contents/MacOS/AppDuo" | /usr/bin/grep -q "@rpath/Sparkle.framework"
 test -f "$app/Contents/Resources/AppIcon.icns"
 test ! -L "$app/Contents/Resources/AppIcon.icns"
 test ! -e "$app/AppDuo_CloneCore.bundle"
