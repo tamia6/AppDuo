@@ -105,7 +105,18 @@ public func validateName(_ name: String) throws {
           name.utf8.count < 160, !name.contains(where: { $0 == "/" || $0 == ":" || $0.isNewline || $0.asciiValue == 0 }) else { throw CloneFailure.invalid("名称不能为空，不能包含 /、: 或换行，且不能过长") }
 }
 public enum Assets {
-    public static let root = Bundle.module.url(forResource: "Resources", withExtension: nil)!
+    // Older SwiftPM accessors only search the app root and the build machine's path.
+    // Resolve the signed app's standard resource location before evaluating that accessor.
+    static func resourceRoot(in app: Bundle, fallback: () -> URL) -> URL {
+        if let url = app.url(forResource: "AppDuo_CloneCore", withExtension: "bundle"),
+           let resources = Bundle(url: url)?.url(forResource: "Resources", withExtension: nil) {
+            return resources
+        }
+        return fallback()
+    }
+    public static let root = resourceRoot(in: .main) {
+        Bundle.module.url(forResource: "Resources", withExtension: nil)!
+    }
     public static let icon = root.appendingPathComponent("AppIcon.icns")
 }
 public let supportedLanguages = ["system", "zh-Hans", "zh-Hant", "en", "ja", "ko", "de", "fr", "es", "ru"]

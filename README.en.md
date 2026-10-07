@@ -82,6 +82,7 @@ swift test
 ./script/build_and_run.sh             # Build and launch the .app
 ./script/build_and_run.sh --verify    # Build and verify process startup
 ./script/build_and_run.sh --dmg       # Package a DMG for the current architecture
+bash script/check_packaged_app.sh dist/AppDuo.app # Check signing, icons, and packaged resources
 ```
 
 You can open `Package.swift` in Xcode. The Codex Run action is configured. Build output is in `dist/`. Packages use local ad-hoc signing and are **not notarized by Apple**.

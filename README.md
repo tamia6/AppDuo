@@ -42,6 +42,7 @@ swift test
 ./script/build_and_run.sh             # 构建 .app 并启动
 ./script/build_and_run.sh --verify    # 构建并验证进程启动
 ./script/build_and_run.sh --dmg       # 输出本机架构 DMG
+bash script/check_packaged_app.sh dist/AppDuo.app # 检查签名、图标和打包资源加载
 ```
 
 可在 Xcode 中打开 `Package.swift`。Codex Run 按钮已配置。构建产物在 `dist/`，本地 ad-hoc 签名，未经过 Apple 公证。
