@@ -69,6 +69,12 @@ Notifications require app compatibility and permission in both the app and macOS
 
 ## Downloads and automated builds
 
+Install from the [personal Homebrew tap](https://github.com/tamia6/homebrew-tap), which automatically selects the Apple Silicon or Intel build:
+
+```sh
+brew install --cask tamia6/tap/appduo
+```
+
 Download from [Releases](https://github.com/tamia6/AppDuo/releases/latest): choose `AppDuo-arm64.dmg` for Apple Silicon or `AppDuo-x86_64.dmg` for Intel.
 
 GitHub Actions tests and builds both architectures on pushes to `main`, pull requests, and manual runs. DMGs are available as workflow artifacts. Pushing a `vMAJOR.MINOR.PATCH` tag publishes a release with DMGs and SHA-256 checksums, with the version embedded in the application metadata.

@@ -24,6 +24,12 @@
 
 ## 下载与自动构建
 
+通过 [个人 Homebrew tap](https://github.com/tamia6/homebrew-tap) 安装，自动选择 Apple Silicon 或 Intel 版本：
+
+```sh
+brew install --cask tamia6/tap/appduo
+```
+
 从 [Releases](https://github.com/tamia6/AppDuo/releases/latest) 下载：Apple Silicon 选择 `AppDuo-arm64.dmg`，Intel 选择 `AppDuo-x86_64.dmg`。
 
 GitHub Actions 在推送 `main`、提交 PR 或手动运行时测试并构建两种架构的 DMG（见 Actions artifacts）。推送 `v主版本.次版本.补丁版本` 标签时，自动发布 Release、DMG 与 SHA-256 校验文件。版本号同步写入应用元数据。
