@@ -39,6 +39,20 @@ git tag v0.1.1
 git push origin v0.1.1
 ```
 
+### 首次打开被 macOS 拦截怎么办？
+
+当前版本使用 ad-hoc 签名，尚未经过 Apple 公证。首次打开时，macOS 可能提示“无法验证开发者”或“Apple 无法检查是否包含恶意软件”；通过 Homebrew 安装也可能遇到此提示。
+
+确认应用来自本项目的 [GitHub Releases](https://github.com/tamia6/AppDuo/releases/latest) 或上述个人 Homebrew tap，并且你信任此来源后：
+
+1. 在「应用程序」中尝试打开 AppDuo；如被拦截，关闭提示。
+2. 打开「系统设置 → 隐私与安全性」，向下找到 AppDuo 的拦截提示，点击「仍要打开」。
+3. 按系统提示完成验证，再点击「打开」。macOS 会为此应用保存例外，之后通常可正常打开。
+
+此操作仅允许该应用打开，不代表应用已通过 Apple 公证。无需关闭整个系统的 Gatekeeper 或使用移除隔离属性的终端命令。如果提示“将损坏你的电脑”或“应用已损坏”，请停止打开，重新从官方 Release 下载；仍有问题时提交 issue。受公司管理的 Mac 可能需联系管理员。
+
+参考：[Apple：在 Mac 上安全地打开 App](https://support.apple.com/zh-cn/102445)。
+
 ## 构建与运行
 
 要求 macOS 14+、Xcode / Command Line Tools、Swift 6 工具链。克隆应用时需要系统 clang 和 codesign。

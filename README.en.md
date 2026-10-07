@@ -79,6 +79,20 @@ Download from [Releases](https://github.com/tamia6/AppDuo/releases/latest): choo
 
 GitHub Actions tests and builds both architectures on pushes to `main`, pull requests, and manual runs. DMGs are available as workflow artifacts. Pushing a `vMAJOR.MINOR.PATCH` tag publishes a release with DMGs and SHA-256 checksums, with the version embedded in the application metadata.
 
+### What if macOS blocks the first launch?
+
+Current builds are ad-hoc signed and have not been notarized by Apple. macOS may warn that the developer cannot be verified or that Apple cannot check the app for malicious software. Installing through Homebrew may show the same warning.
+
+After confirming that the app came from this project's [GitHub Releases](https://github.com/tamia6/AppDuo/releases/latest) or the personal Homebrew tap above, and that you trust this source:
+
+1. Try opening AppDuo in Applications. Dismiss the warning if it is blocked.
+2. Open System Settings → Privacy & Security, scroll to the AppDuo warning, and click **Open Anyway**.
+3. Authenticate if prompted, then click **Open**. macOS saves an exception for this app, so subsequent launches normally work.
+
+This allows this app to open; it does not notarize it. You do not need to disable Gatekeeper globally or run Terminal commands to remove quarantine attributes. If the warning says the app “will damage your computer” or “is damaged”, stop and download it again from the official release. Report an issue if the problem persists. On a managed Mac, contact your administrator if approval is unavailable.
+
+Reference: [Apple: Safely open apps on your Mac](https://support.apple.com/en-us/102445).
+
 ## Build and run
 
 Requires macOS 14+, Xcode or Command Line Tools, and a Swift 6 toolchain. Creating clones uses Apple's `clang` and `codesign`.
