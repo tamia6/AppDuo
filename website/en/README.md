@@ -69,7 +69,7 @@ Notifications require app compatibility and permission in both the app and macOS
 
 ## Downloads and automated builds
 
-Install from the [personal Homebrew tap](https://github.com/tamia6/homebrew-tap), which automatically selects the Apple Silicon or Intel build:
+Install with [Homebrew](https://github.com/tamia6/homebrew-tap), which automatically selects the Apple Silicon or Intel build:
 
 ```sh
 brew install --cask tamia6/tap/appduo
@@ -83,7 +83,7 @@ GitHub Actions tests and builds both architectures on pushes to `main`, pull req
 
 Current builds are ad-hoc signed and have not been notarized by Apple. macOS may warn that the developer cannot be verified or that Apple cannot check the app for malicious software. Installing through Homebrew may show the same warning.
 
-After confirming that the app came from this project's [GitHub Releases](https://github.com/tamia6/AppDuo/releases/latest) or the personal Homebrew tap above, and that you trust this source:
+After confirming that the app came from this project's [GitHub Releases](https://github.com/tamia6/AppDuo/releases/latest) or the Homebrew installation above, and that you trust this source:
 
 1. Try opening AppDuo in Applications. Dismiss the warning if it is blocked.
 2. Open System Settings → Privacy & Security, scroll to the AppDuo warning, and click **Open Anyway**.

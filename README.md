@@ -24,7 +24,7 @@
 
 ## 下载与自动构建
 
-通过 [个人 Homebrew tap](https://github.com/tamia6/homebrew-tap) 安装，自动选择 Apple Silicon 或 Intel 版本：
+通过 [brew](https://github.com/tamia6/homebrew-tap) 安装，自动选择 Apple Silicon 或 Intel 版本：
 
 ```sh
 brew install --cask tamia6/tap/appduo
@@ -43,7 +43,7 @@ git push origin v0.1.1
 
 当前版本使用 ad-hoc 签名，尚未经过 Apple 公证。首次打开时，macOS 可能提示“无法验证开发者”或“Apple 无法检查是否包含恶意软件”；通过 Homebrew 安装也可能遇到此提示。
 
-确认应用来自本项目的 [GitHub Releases](https://github.com/tamia6/AppDuo/releases/latest) 或上述个人 Homebrew tap，并且你信任此来源后：
+确认应用来自本项目的 [GitHub Releases](https://github.com/tamia6/AppDuo/releases/latest) 或上述 brew 安装方式，并且你信任此来源后：
 
 1. 在「应用程序」中尝试打开 AppDuo；如被拦截，关闭提示。
 2. 打开「系统设置 → 隐私与安全性」，向下找到 AppDuo 的拦截提示，点击「仍要打开」。
