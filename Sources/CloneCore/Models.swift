@@ -40,6 +40,8 @@ public struct Recipe: Identifiable, Codable, Sendable {
     public var chatgpt = false
     public var stripURLs = false
     public var injection: Injection = .auto
+    // Missing in older saved recipes; nil keeps the existing rename behavior.
+    public var preserveMainExecutableName: Bool?
     public var id: String { bundleID }
     public init(bundleID: String, appName: String, strategy: Strategy = .hard) {
         self.bundleID = bundleID; self.appName = appName; self.strategy = strategy
@@ -72,6 +74,7 @@ public struct CloneConfiguration: Codable, Sendable, Identifiable {
     public init(source: URL, name: String, destination: URL, dataDirectory: URL, recipe: Recipe) {
         self.source = source; self.name = name; self.displayName = name; self.destination = destination
         self.dataDirectory = dataDirectory; self.recipe = recipe
+        self.injection = recipe.injection
         self.bundleID = recipe.bundleID + ".atbclone." + UUID().uuidString.lowercased()
     }
     public func validate() throws {
