@@ -23,6 +23,8 @@ final class ExecutableNameTests: XCTestCase {
             for injection in [Injection.dylib, .launcher] {
                 let (root, base) = try EngineTests().fixture()
                 defer { try? FileManager.default.removeItem(at: root) }
+                // Match Intel clang output, which has no implicit ad-hoc signature.
+                try Command.run("/usr/bin/codesign", ["--remove-signature", base.source.appendingPathComponent("Contents/MacOS/Original").path], acceptFailure: true)
                 var c = base
                 let recipe = try XCTUnwrap(Recipes.load().first { $0.bundleID == id })
                 c.recipe = recipe; c.recipe.environment = base.recipe.environment; c.recipe.symlinks = []

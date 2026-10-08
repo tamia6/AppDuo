@@ -145,7 +145,16 @@ public struct CloneEngine {
     }
     private func sign(_ app: URL, stripSandbox: Bool) throws {
         let fm = FileManager.default
+        let metadata = try Plist.read(app.appendingPathComponent("Contents/Info.plist"))
+        guard let mainName = metadata["CFBundleExecutable"] as? String else { throw CloneFailure.invalid("应用缺少主程序") }
+        let mainExecutable = app.resolvingSymlinksInPath().appendingPathComponent("Contents/MacOS/" + mainName)
         let files = try bundleFiles(app).sorted { a, b in
+            // Signing the main executable also seals its enclosing bundle. All
+            // secondary executables must already be signed (Intel clang leaves
+            // them unsigned), even when the launcher has a longer filename.
+            let aMain = a.resolvingSymlinksInPath().path == mainExecutable.path
+            let bMain = b.resolvingSymlinksInPath().path == mainExecutable.path
+            if aMain != bMain { return bMain }
             let aLibrary = ["dylib", "so"].contains(a.pathExtension), bLibrary = ["dylib", "so"].contains(b.pathExtension)
             if aLibrary != bLibrary { return aLibrary }; return a.path.count > b.path.count
         }
