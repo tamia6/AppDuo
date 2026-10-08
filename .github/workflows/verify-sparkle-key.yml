@@ -1,0 +1,60 @@
+name: Verify Sparkle signing key
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - name: Sign fixed test payload and verify public key
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$SPARKLE_PRIVATE_KEY" || { echo '::error::SPARKLE_PRIVATE_KEY is missing'; exit 1; }
+          test -n "$SPARKLE_PUBLIC_KEY" || { echo '::error::SPARKLE_PUBLIC_KEY is missing'; exit 1; }
+          verification_dir="$(mktemp -d)"
+          trap 'rm -rf "$verification_dir"' EXIT
+          curl --fail --location --retry 3 -o "$verification_dir/Sparkle.tar.xz" https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-2.10.0.tar.xz
+          printf '%s  %s\n' c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c "$verification_dir/Sparkle.tar.xz" | shasum -a 256 -c -
+          tar -xf "$verification_dir/Sparkle.tar.xz" -C "$verification_dir"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$verification_dir/private-key.txt"
+          printf 'AppDuo production Sparkle key pairing test\n' > "$verification_dir/payload.txt"
+          if ! "$verification_dir/bin/sign_update" --ed-key-file "$verification_dir/private-key.txt" -p "$verification_dir/payload.txt" > "$verification_dir/signature.txt" 2> "$verification_dir/private-tool-errors.txt"; then
+            echo '::error::Signing failed; key details are not logged'
+            exit 1
+          fi
+          cat > "$verification_dir/verify.swift" <<'SWIFT'
+          import Foundation
+          import CryptoKit
+          do {
+              let signatureText = try String(contentsOfFile: CommandLine.arguments[3], encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+              guard let publicBytes = Data(base64Encoded: CommandLine.arguments[1]), publicBytes.count == 32,
+                    let signature = Data(base64Encoded: signatureText), signature.count == 64 else {
+                  throw NSError(domain: "KeyValidation", code: 1)
+              }
+              let key = try Curve25519.Signing.PublicKey(rawRepresentation: publicBytes)
+              let payload = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[2]))
+              guard key.isValidSignature(signature, for: payload) else {
+                  throw NSError(domain: "KeyValidation", code: 2)
+              }
+              var modified = payload
+              modified.append(0)
+              guard !key.isValidSignature(signature, for: modified) else {
+                  throw NSError(domain: "KeyValidation", code: 3)
+              }
+              print("Production key pairing and signature verification passed; modified payload rejected.")
+          } catch {
+              print("Key pairing or signature verification failed. No key details are logged.")
+              exit(1)
+          }
+          SWIFT
+          swift "$verification_dir/verify.swift" "$SPARKLE_PUBLIC_KEY" "$verification_dir/payload.txt" "$verification_dir/signature.txt"
+          echo 'Production key pairing and signature verification passed; modified payload rejected. This is not a release or end-to-end app update test.' >> "$GITHUB_STEP_SUMMARY"

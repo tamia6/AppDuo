@@ -8,7 +8,7 @@ if [[ "$mode" != "--build" && "$mode" != "--dmg" ]]; then
     /usr/bin/pkill -x "$name" >/dev/null 2>&1 || true
 fi
 configuration="${CONFIGURATION:-debug}"
-version="${APP_VERSION:-0.1.6}"
+version="${APP_VERSION:-0.1.7}"
 public_key="${SPARKLE_PUBLIC_KEY:-}"
 if [[ "${REQUIRE_UPDATES:-0}" == "1" && -z "$public_key" ]]; then
     echo "Release requires SPARKLE_PUBLIC_KEY" >&2

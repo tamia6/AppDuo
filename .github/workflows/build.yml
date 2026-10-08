@@ -89,5 +89,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           rm -f dist/update-public-key-arm64.txt dist/update-public-key-x86_64.txt
-          gh release create "$GITHUB_REF_NAME" dist/* --draft --repo "$GITHUB_REPOSITORY" --verify-tag --title "AppDuo $GITHUB_REF_NAME" --notes "Apple Silicon: arm64; Intel: x86_64. Requires macOS 14+ and Xcode Command Line Tools for cloning. Ad-hoc signed; not Apple notarized. Includes signed Sparkle update feeds."
+          gh release create "$GITHUB_REF_NAME" dist/* --draft --repo "$GITHUB_REPOSITORY" --verify-tag --title "AppDuo $GITHUB_REF_NAME" --notes-file "docs/release-${GITHUB_REF_NAME}.md"
           gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false
