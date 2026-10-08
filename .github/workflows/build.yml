@@ -25,17 +25,22 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Test
-        run: swift test
+        run: |
+          swift test
+          python3 script/test_publish_updates.py
       - name: Build DMG
         env:
           CONFIGURATION: release
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
         run: |
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
             export APP_VERSION="${GITHUB_REF_NAME#v}"
+            export REQUIRE_UPDATES=1
           fi
           bash script/build_and_run.sh --dmg
           codesign --verify --deep --strict dist/AppDuo.app
           hdiutil verify "dist/AppDuo-$(uname -m).dmg"
+          plutil -extract SUPublicEDKey raw -o "dist/update-public-key-$(uname -m).txt" dist/AppDuo.app/Contents/Info.plist
           cd dist
           shasum -a 256 "AppDuo-$(uname -m).dmg" > "AppDuo-$(uname -m).dmg.sha256"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -44,21 +49,45 @@ jobs:
           path: |
             dist/*.dmg
             dist/*.sha256
+            dist/update-public-key-*.txt
           if-no-files-found: error
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: macos-15
+    concurrency:
+      group: appduo-release
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: dist
           merge-multiple: true
+      - name: Sign update feeds
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SPARKLE_PRIVATE_KEY" || { echo "Release requires SPARKLE_PRIVATE_KEY" >&2; exit 1; }
+          test -n "$SPARKLE_PUBLIC_KEY" || { echo "Release requires SPARKLE_PUBLIC_KEY" >&2; exit 1; }
+          tool_dir="$(mktemp -d)"
+          key_file="$(mktemp)"
+          trap 'rm -rf "$tool_dir"; rm -f "$key_file"' EXIT
+          chmod 600 "$key_file"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$key_file"
+          curl --fail --location --retry 3 -o "$tool_dir/Sparkle.tar.xz" https://github.com/sparkle-project/Sparkle/releases/download/2.10.0/Sparkle-2.10.0.tar.xz
+          printf '%s  %s\n' c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c "$tool_dir/Sparkle.tar.xz" | shasum -a 256 -c -
+          tar -xf "$tool_dir/Sparkle.tar.xz" -C "$tool_dir"
+          python3 script/publish_updates.py --version "${GITHUB_REF_NAME#v}" --directory dist --output dist --sign-update "$tool_dir/bin/sign_update" --private-key-file "$key_file" --public-key "$SPARKLE_PUBLIC_KEY"
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag --title "AppDuo $GITHUB_REF_NAME" --notes "Apple Silicon: arm64; Intel: x86_64. Requires macOS 14+ and Xcode Command Line Tools for cloning. Ad-hoc signed; not Apple notarized."
+          rm -f dist/update-public-key-arm64.txt dist/update-public-key-x86_64.txt
+          gh release create "$GITHUB_REF_NAME" dist/* --draft --repo "$GITHUB_REPOSITORY" --verify-tag --title "AppDuo $GITHUB_REF_NAME" --notes-file "docs/release-${GITHUB_REF_NAME}.md"
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false

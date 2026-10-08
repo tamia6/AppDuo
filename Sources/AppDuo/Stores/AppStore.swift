@@ -6,7 +6,8 @@ import CloneCore
     var records: [CloneRecord] = []
     var availableUpdates: [UUID: String] = [:]
     var recipes: [Recipe] = []
-    var busy = false
+    var busyDidChange: ((Bool) -> Void)?
+    var busy = false { didSet { busyDidChange?(busy) } }
     var progress = ""
     var logs: [String] = []
     var error: String?
