@@ -136,6 +136,8 @@ Default directories do not need administrator privileges. Automatic elevation fo
 
 ## CLI
 
+The built-in YAML option `preserve_main_executable_name: true` keeps the main executable's original name. WeCom enables it to avoid the startup crash reproduced after renaming version 5.0.9. App names, icons and bundle IDs remain independent, but main process names cannot distinguish the instances. WeChat keeps its existing executable-renaming behavior. Quit and update an older WeCom clone to apply this compatibility policy without moving or deleting its data. Successful creation or update does not verify login, notifications or full data isolation for every version.
+
 The CLI is available from source and is not included in the downloaded GUI app.
 
 ```sh

@@ -87,13 +87,14 @@ public enum MachO {
 }
 public enum ProcessNames {
     /// Retain compatibility aliases, rejecting all collisions before touching files.
-    public static func rename(in app: URL, main: URL, name: String) throws {
+    public static func rename(in app: URL, main: URL, name: String, renameMain: Bool = true) throws {
         try validateName(name)
         let fm = FileManager.default
         var moves: [URL: URL] = [:], plists: [URL] = []
         for file in try bundleFiles(app) {
             if file.lastPathComponent == "Info.plist" { plists.append(file) }
             if fm.isExecutableFile(atPath: file.path), MachO.isExecutable(file) {
+                if !renameMain && file.standardizedFileURL.path == main.standardizedFileURL.path { continue }
                 let target = file.deletingLastPathComponent().appendingPathComponent(file.standardizedFileURL.path == main.standardizedFileURL.path ? name : name + "-" + file.lastPathComponent)
                 if target.path != file.path { moves[file] = target }
             }

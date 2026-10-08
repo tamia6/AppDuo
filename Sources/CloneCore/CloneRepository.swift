@@ -38,8 +38,15 @@ public actor CloneRepository {
             let previous = records.first { $0.id == configuration.id }
             if updating { guard let previous, Inspector.sameApplication(previous.configuration.destination, as: configuration.destination) else { throw CloneFailure.invalid("找不到待更新分身") } }
             else { guard !records.contains(where: { Inspector.sameApplication($0.configuration.destination, as: configuration.destination) || $0.configuration.name == configuration.name }) else { throw CloneFailure.invalid("分身名称或位置已存在") } }
+            var effective = configuration
+            // Apply newly introduced compatibility policy when updating legacy records.
+            // Existing choices and embedded data paths remain unchanged.
+            if updating, effective.recipe.preserveMainExecutableName == nil,
+               let current = try Recipes.load(customDirectory: root.appendingPathComponent("recipes")).first(where: { $0.bundleID == effective.recipe.bundleID }) {
+                effective.recipe.preserveMainExecutableName = current.preserveMainExecutableName
+            }
             try Secrets.save(password, id: configuration.id)
-            var record = try CloneEngine().build(configuration, password: password, updating: updating, log: log)
+            var record = try CloneEngine().build(effective, password: password, updating: updating, log: log)
             if let previous { record.createdAt = previous.createdAt }
             records.removeAll { $0.id == record.id }; records.append(record)
             try save(records); return records

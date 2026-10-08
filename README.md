@@ -97,6 +97,8 @@ Swift 标准库无法提供 YAML 解析，因此只引入 [Yams](https://github.
 
 ## CLI
 
+内置 YAML 可用 `preserve_main_executable_name: true` 保留主程序原名。企业微信规则启用此兼容选项，避免 5.0.9 因主程序改名而启动崩溃；分身名称、图标和 Bundle ID 仍可独立设置，但主进程名不能区分两个实例。微信规则不启用该选项，继续支持改程序名。旧企业微信分身退出后执行更新即可应用该兼容策略，数据路径和数据保持不变。创建或更新成功不代表所有版本的登录、通知和数据隔离都已验证。
+
 ```sh
 swift run AppDuoCLI clone /Applications/WeChat.app --name WeWork --icon /path/icon.icns
 swift run AppDuoCLI list

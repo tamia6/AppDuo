@@ -76,6 +76,9 @@ struct WizardView: View {
         Section("已匹配规则：\(recipe?.appName ?? "自动探测")") {
             Picker("克隆方式", selection: Binding(get: { recipe?.strategy ?? .hard }, set: { recipe?.strategy = $0 })) { ForEach(Strategy.allCases, id: \.self) { Text($0.label).tag($0) } }
             Text("硬分身复制完整应用，可自定义主进程及辅助进程名称。软分身使用原应用程序，适合支持独立配置目录的应用。").font(.callout).foregroundStyle(.secondary)
+            if recipe?.preserveMainExecutableName == true {
+                Text("此应用的兼容规则保留主程序原名。分身名称、图标和 Bundle ID 仍独立，但不能通过主进程名称区分原版和分身。").font(.callout).foregroundStyle(.secondary)
+            }
             Picker("环境注入", selection: $injection) { Text("自动选择").tag(Injection.auto); Text("进程内动态库").tag(Injection.dylib); Text("原生启动器").tag(Injection.launcher) }.disabled(recipe?.strategy == .soft)
             Toggle("移除应用沙盒限制", isOn: Binding(get: { recipe?.stripSandbox ?? false }, set: { recipe?.stripSandbox = $0 }))
         }
@@ -83,7 +86,7 @@ struct WizardView: View {
     private var identityForm: some View {
         Group {
             Section("分身身份") {
-                TextField("分身名称 / 进程名", text: $name).disabled(record != nil)
+                TextField(recipe?.preserveMainExecutableName == true ? "分身名称" : "分身名称 / 进程名", text: $name).disabled(record != nil)
                 TextField("显示名称", text: $displayName)
                 Picker("应用界面语言", selection: $language) { ForEach(supportedLanguages, id: \.self) { Text($0 == "system" ? "跟随系统" : Locale.current.localizedString(forLanguageCode: $0) ?? $0).tag($0) } }
             }

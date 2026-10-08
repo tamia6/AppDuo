@@ -4,6 +4,8 @@ strategy: hard_clone
 app_type: chromium
 strip_sandbox: true
 injection_strategy: dylib
+# WeCom 5.0.9 crashes during startup when its main executable is renamed.
+preserve_main_executable_name: true
 environment_injection:
   HOME: '{{ATB_DATA_DIR}}/Home'
   TMPDIR: '{{ATB_DATA_DIR}}/Tmp'

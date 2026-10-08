@@ -72,7 +72,8 @@ public struct CloneEngine {
                 try RuntimeBuilder.dylib(output: frameworks.appendingPathComponent("libatbclone_env.dylib"), env: env)
                 try injected.write(to: main)
             }
-            try ProcessNames.rename(in: staging, main: main, name: config.name)
+            let preserveMain = config.recipe.preserveMainExecutableName == true
+            try ProcessNames.rename(in: staging, main: main, name: config.name, renameMain: !preserveMain)
             if !useDylib {
                 if needsHook {
                     try RuntimeBuilder.compile(String(contentsOf: Assets.root.appendingPathComponent("Isolation.m"), encoding: .utf8), output: frameworks.appendingPathComponent("libatbclone_hook.dylib"), library: true, objc: true)
@@ -80,7 +81,7 @@ public struct CloneEngine {
                 let launcherName = config.name + "-Launcher"
                 let launcher = macos.appendingPathComponent(launcherName)
                 guard !fm.fileExists(atPath: launcher.path) else { throw CloneFailure.invalid("启动器名称冲突") }
-                try RuntimeBuilder.launcher(output: launcher, target: config.name, relative: true, env: env, arguments: args, hook: needsHook)
+                try RuntimeBuilder.launcher(output: launcher, target: preserveMain ? info.executable : config.name, relative: true, env: env, arguments: args, hook: needsHook)
                 var plist = try Plist.read(metadataURL); plist["CFBundleExecutable"] = launcherName; try Plist.write(plist, to: metadataURL)
             }
             try BinaryPatches.apply(in: staging, recipe: config.recipe, log: log)
