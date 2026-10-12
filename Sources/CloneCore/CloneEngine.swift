@@ -168,7 +168,7 @@ public struct CloneEngine {
         }
         // Sign nested containers deepest-first, then seal the root bundle.
         if let iterator = fm.enumerator(at: app, includingPropertiesForKeys: [.isSymbolicLinkKey]) {
-            let containers = iterator.compactMap { $0 as? URL }.filter { ["app", "framework", "appex", "xpc"].contains($0.pathExtension) && (try? $0.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true }.sorted { $0.path.count > $1.path.count }
+            let containers = iterator.compactMap { $0 as? URL }.filter { ["app", "framework", "appex", "xpc", "bundle"].contains($0.pathExtension) && (try? $0.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true }.sorted { $0.path.count > $1.path.count }
             for bundle in containers { try Command.run("/usr/bin/codesign", ["--force", "--sign", "-", "--preserve-metadata=entitlements", bundle.path]) }
         }
         try Command.run("/usr/bin/codesign", ["--force", "--sign", "-", "--preserve-metadata=entitlements", app.path])

@@ -85,6 +85,12 @@ public struct CloneConfiguration: Codable, Sendable, Identifiable {
               !data.hasPrefix(dst + "/"), !dst.hasPrefix(data + "/"), data != dst,
               data != NSHomeDirectory(), data != "/", data != src, !data.hasPrefix(src + "/"), !src.hasPrefix(data + "/") else { throw CloneFailure.invalid("原应用、分身及数据目录不能重叠") }
         if proxy.enabled { _ = try proxy.url() }
+        guard !recipe.arguments.contains(where: { $0.contains(where: { $0 == "\0" || $0.isNewline }) }) else {
+            throw CloneFailure.invalid("每个启动参数不能包含 NUL 或换行")
+        }
+        if recipe.strategy == .hard && injection == .dylib && !recipe.arguments.isEmpty {
+            throw CloneFailure.invalid("启动参数需要原生启动器，请选择自动或原生启动器注入")
+        }
         for key in recipe.environment.keys {
             guard key.range(of: "^[A-Za-z_][A-Za-z0-9_]*$", options: .regularExpression) != nil else { throw CloneFailure.invalid("非法环境变量：\(key)") }
         }

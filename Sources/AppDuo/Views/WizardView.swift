@@ -14,6 +14,7 @@ struct WizardView: View {
     @State private var name = ""
     @State private var displayName = ""
     @State private var language = "system"
+    @State private var launchArguments = ""
     @State private var icon: URL?
     @State private var destination = ""
     @State private var dataDirectory = ""
@@ -44,7 +45,9 @@ struct WizardView: View {
                 switch step {
                 case 0: sourceForm
                 case 1: strategyForm
-                case 2: identityForm
+                case 2:
+                    identityForm
+                    argumentsForm
                 case 3: networkForm
                 default: summaryForm
                 }
@@ -76,7 +79,6 @@ struct WizardView: View {
         Section("已匹配规则：\(recipe?.appName ?? "自动探测")") {
             Picker("克隆方式", selection: Binding(get: { recipe?.strategy ?? .hard }, set: { recipe?.strategy = $0 })) { ForEach(Strategy.allCases, id: \.self) { Text($0.label).tag($0) } }
             Text("硬分身复制完整应用，可自定义主进程及辅助进程名称。软分身使用原应用程序，适合支持独立配置目录的应用。").font(.callout).foregroundStyle(.secondary)
-            Picker("环境注入", selection: $injection) { Text("自动选择").tag(Injection.auto); Text("进程内动态库").tag(Injection.dylib); Text("原生启动器").tag(Injection.launcher) }.disabled(recipe?.strategy == .soft)
             Toggle("移除应用沙盒限制", isOn: Binding(get: { recipe?.stripSandbox ?? false }, set: { recipe?.stripSandbox = $0 }))
         }
     }
@@ -120,12 +122,26 @@ struct WizardView: View {
             }
         }
     }
+    private var argumentsForm: some View {
+        Section("启动参数（可选）") {
+            TextEditor(text: $launchArguments)
+                .font(.system(.callout, design: .monospaced))
+                .frame(height: 80)
+                .accessibilityLabel("启动参数，每行一个")
+            Text("每行一个参数，空行忽略。空格和引号按原样传入，无需 shell 引号。已填入规则默认参数；请保留独立数据目录参数，{{ATB_DATA_DIR}} 会替换为分身数据路径。").font(.caption).foregroundStyle(.secondary)
+            Picker("环境注入", selection: $injection) { Text("自动选择").tag(Injection.auto); Text("进程内动态库").tag(Injection.dylib); Text("原生启动器").tag(Injection.launcher) }.disabled(recipe?.strategy == .soft)
+            Text("有启动参数时请选择自动或原生启动器。").font(.caption).foregroundStyle(.secondary)
+        }
+    }
     private var summaryForm: some View {
         Section("即将\(record == nil ? "创建" : "更新")") {
             LabeledContent("应用", value: info?.name ?? recipe?.appName ?? "")
             LabeledContent("分身", value: name)
             LabeledContent("方式", value: recipe?.strategy.label ?? "")
             LabeledContent("语言", value: language)
+            if !launchArguments.isEmpty {
+                LabeledContent("启动参数") { Text(launchArguments).font(.system(.caption, design: .monospaced)).textSelection(.enabled) }
+            }
             LabeledContent("网络", value: proxy.enabled ? "\(proxy.type)://\(proxy.host):\(proxy.port)" : "系统网络")
             Text(destination).font(.caption).textSelection(.enabled)
             if recipe?.strategy == .hard {
@@ -140,10 +156,12 @@ struct WizardView: View {
     }
     private func selectSource() {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.applicationBundle]; panel.canChooseDirectories = false
+        panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let inspected = try Inspector.inspect(url); source = url; info = inspected
             let r = Recipes.match(inspected, recipes: store.recipes); recipe = r; injection = r.injection
+            launchArguments = r.arguments.joined(separator: "\n")
             name = inspected.name + " 2"; displayName = name; icon = nil
             destination = store.root.appendingPathComponent("Apps/\(name).app").path
             dataDirectory = store.root.appendingPathComponent("Data/\(name)").path; issue = nil
@@ -157,6 +175,7 @@ struct WizardView: View {
         guard let source, let recipe else { throw CloneFailure.invalid("请选择应用") }
         var c = record?.configuration ?? CloneConfiguration(source: source, name: name, destination: URL(fileURLWithPath: destination), dataDirectory: URL(fileURLWithPath: dataDirectory), recipe: recipe)
         c.name = name; c.displayName = displayName.isEmpty ? name : displayName; c.recipe = recipe
+        c.recipe.arguments = launchArguments.components(separatedBy: .newlines).filter { !$0.isEmpty }
         c.destination = URL(fileURLWithPath: NSString(string: destination).expandingTildeInPath)
         c.dataDirectory = URL(fileURLWithPath: NSString(string: dataDirectory).expandingTildeInPath)
         c.proxy = proxy; c.language = language; c.customIcon = icon; c.injection = injection
@@ -178,6 +197,7 @@ struct WizardView: View {
     private func restore() {
         guard let record else { return }
         let c = record.configuration; source = c.source; info = try? Inspector.inspect(c.source); recipe = c.recipe
+        launchArguments = c.recipe.arguments.joined(separator: "\n")
         name = c.name; displayName = c.displayName; language = c.language; proxy = c.proxy; injection = c.injection
         destination = c.destination.path; dataDirectory = c.dataDirectory.path; step = 2
         do { password = try Secrets.read(c.id) } catch { issue = error.localizedDescription }
