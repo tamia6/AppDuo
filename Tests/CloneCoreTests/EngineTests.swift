@@ -2,6 +2,49 @@ import XCTest
 @testable import CloneCore
 
 final class EngineTests: XCTestCase {
+    func testNestedCodeBundleIsResealedAfterSigningItsExecutable() throws {
+        let (root, config) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let bundle = config.source.appendingPathComponent("Contents/Helpers/Updater.bundle")
+        let executable = bundle.appendingPathComponent("Contents/MacOS/SoftwareUpdaterExecutable")
+        try FileManager.default.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: config.source.appendingPathComponent("Contents/MacOS/Original"), to: executable)
+        try Plist.write(["CFBundleIdentifier": "com.atb.updater", "CFBundleExecutable": "SoftwareUpdaterExecutable", "CFBundlePackageType": "BNDL"], to: bundle.appendingPathComponent("Contents/Info.plist"))
+        let helper = bundle.appendingPathComponent("Contents/Helpers/tool")
+        try FileManager.default.createDirectory(at: helper.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: executable, to: helper)
+        try Command.run("/usr/bin/codesign", ["--force", "--sign", "-", helper.path])
+        try Command.run("/usr/bin/codesign", ["--force", "--sign", "-", bundle.path])
+        _ = try CloneEngine().build(config)
+        try Command.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", config.destination.path])
+    }
+    func testLaunchArgumentsPersistAndExpandOnCreateAndEdit() async throws {
+        for strategy in Strategy.allCases {
+            let (root, base) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+            var config = base; config.recipe.strategy = strategy
+            config.recipe.arguments = ["--recipe-default", "--profile={{ATB_DATA_DIR}}", " spaces 中文 ' \" \\ $HOME; $(echo test) "]
+            let repository = CloneRepository(root: root.appendingPathComponent("Records"))
+            _ = try await repository.build(config, password: "", updating: false, log: { _ in })
+            var records = try await repository.load()
+            XCTAssertEqual(records[0].configuration.recipe.arguments, config.recipe.arguments)
+            let launcher = config.destination.appendingPathComponent("Contents/MacOS/WeWork-Launcher")
+            let result = try Command.run(launcher.path, ["forwarded argument"])
+            XCTAssertTrue(result.hasSuffix("--recipe-default\n--profile=\(config.dataDirectory.path)\n spaces 中文 ' \" \\ $HOME; $(echo test) \nforwarded argument\n"), result)
+            var edited = records[0].configuration
+            edited.recipe.arguments = ["--edited={{ATB_DATA_DIR}}/Profile with spaces"]
+            _ = try await repository.build(edited, password: "", updating: true, log: { _ in })
+            records = try await repository.load()
+            XCTAssertEqual(records[0].configuration.recipe.arguments, edited.recipe.arguments)
+            XCTAssertTrue(try Command.run(launcher.path, []).hasSuffix("--edited=\(config.dataDirectory.path)/Profile with spaces\n"))
+            edited.recipe.arguments = []
+            _ = try await repository.build(edited, password: "", updating: true, log: { _ in })
+            records = try await repository.load()
+            XCTAssertEqual(records[0].configuration.recipe.arguments, [])
+            let metadata = try Plist.read(config.destination.appendingPathComponent("Contents/Info.plist"))
+            let executable = try XCTUnwrap(metadata["CFBundleExecutable"] as? String)
+            let cleared = try Command.run(config.destination.appendingPathComponent("Contents/MacOS/" + executable).path, [])
+            XCTAssertFalse(cleared.contains("--edited="), cleared)
+        }
+    }
     func testRepositoryUpdateAcceptsEquivalentPaths() async throws {
         let (root, config) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -39,6 +39,22 @@ final class CoreTests: XCTestCase {
         XCTAssertTrue(try proxy.url(password: "p:/@").contains("a%40b"))
         proxy.port = 0; XCTAssertThrowsError(try proxy.url())
     }
+    func testLaunchArgumentsValidation() throws {
+        var c = CloneConfiguration(source: URL(fileURLWithPath: "/tmp/Original.app"), name: "Clone", destination: URL(fileURLWithPath: "/tmp/Clone.app"), dataDirectory: URL(fileURLWithPath: "/tmp/Clone-data"), recipe: Recipe(bundleID: "com.atb.test", appName: "Original"))
+        c.recipe.arguments = ["", " spaces 中文 ' \" \\ $HOME; $(echo test) ", "--profile={{ATB_DATA_DIR}}"]
+        XCTAssertNoThrow(try c.validate())
+        for invalid in ["before\0after", "before\nafter", "before\rafter"] {
+            c.recipe.arguments = [invalid]
+            XCTAssertThrowsError(try c.validate())
+        }
+        c.recipe.arguments = ["--custom"]
+        c.injection = .dylib
+        XCTAssertThrowsError(try c.validate())
+        c.recipe.arguments = []
+        XCTAssertNoThrow(try c.validate())
+        c.recipe.strategy = .soft; c.recipe.arguments = ["--custom"]
+        XCTAssertNoThrow(try c.validate())
+    }
     func testMalformedMachOIsRejected() throws {
         XCTAssertThrowsError(try MachO.inject(Data([0, 1, 2]), library: "@executable_path/test.dylib"))
     }
