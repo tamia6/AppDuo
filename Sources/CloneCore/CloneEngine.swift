@@ -92,7 +92,12 @@ public struct CloneEngine {
             metadata = try Plist.read(metadataURL); metadata["CFBundleExecutable"] = launcher; try Plist.write(metadata, to: metadataURL)
         }
         log("重新签名并验证…")
-        try Command.run("/usr/bin/xattr", ["-cr", staging.path])
+        // Generic nested code (e.g. XPlayer's Vulkan JSON) stores its signature in
+        // com.apple.cs.* xattrs. Clearing all attributes destroys that signature.
+        // Remove only quarantine and the detritus that codesign rejects.
+        for attribute in ["com.apple.quarantine", "com.apple.FinderInfo", "com.apple.ResourceFork"] {
+            try Command.run("/usr/bin/xattr", ["-dr", attribute, staging.path])
+        }
         try sign(staging, stripSandbox: config.recipe.stripSandbox)
         try Command.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", staging.path])
         log("安装已验证的分身…")
